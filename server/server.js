@@ -15,7 +15,7 @@ const server = http.createServer(app);
 // We must attach it to the raw HTTP server, not just Express.
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173', // Vite default port
+    origin: '*', // Allow all origins for testing/production parity with Express
     methods: ['GET', 'POST']
   }
 });
