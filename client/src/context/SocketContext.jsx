@@ -16,7 +16,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // Only connect if we have a logged-in user
     if (user) {
-      const newSocket = io('http://localhost:5000');
+      const newSocket = io('https://voip-s8p7.onrender.com');
       setSocket(newSocket);
 
       newSocket.on('connect', () => {

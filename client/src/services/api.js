@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Pointing to our Node.js server
+  baseURL: 'https://voip-s8p7.onrender.com/api', // Pointing to our Node.js server
 });
 
 // Add a request interceptor to attach the JWT token to every request automatically
