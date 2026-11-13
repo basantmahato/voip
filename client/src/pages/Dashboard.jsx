@@ -19,13 +19,21 @@ const Dashboard = () => {
   } = useWebRTC();
 
   return (
-    <div className="flex h-screen w-full bg-gray-900 overflow-hidden relative">
-      <Sidebar 
-        onlineUsers={onlineUsers} 
-        selectedUser={selectedUser} 
-        setSelectedUser={setSelectedUser} 
-      />
-      <ChatBox selectedUserId={selectedUser} callUser={callUser} />
+    <div className="relative flex h-screen h-[100dvh] w-full overflow-hidden bg-gray-900">
+      <div className={`${selectedUser ? 'hidden' : 'flex'} h-full min-h-0 w-full flex-col lg:flex lg:w-80 lg:flex-none`}>
+        <Sidebar
+          onlineUsers={onlineUsers}
+          selectedUser={selectedUser}
+          setSelectedUser={setSelectedUser}
+        />
+      </div>
+      <div className={`${selectedUser ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-1 lg:flex`}>
+        <ChatBox
+          selectedUser={selectedUser}
+          callUser={callUser}
+          onBack={() => setSelectedUser(null)}
+        />
+      </div>
       
       <CallModal 
         callState={callState} 

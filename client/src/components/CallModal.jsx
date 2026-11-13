@@ -8,7 +8,7 @@ const CallModal = ({ callState, endCall, remoteAudioRef }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-80 rounded-2xl bg-gray-800 p-6 flex flex-col items-center shadow-2xl">
+      <div className="flex w-80 max-w-[calc(100vw-2rem)] flex-col items-center rounded-2xl bg-gray-800 p-6 shadow-2xl">
         
         {/* Hidden Audio Element for remote sound */}
         <audio ref={remoteAudioRef} autoPlay />

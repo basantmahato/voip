@@ -1,5 +1,36 @@
+const { randomUUID } = require('crypto');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+
+// @desc    Create a passwordless guest session
+// @route   POST /api/auth/guest
+// @access  Public
+const createGuest = async (req, res) => {
+  try {
+    const displayName = typeof req.body?.displayName === 'string'
+      ? req.body.displayName.trim()
+      : '';
+
+    if (!displayName || displayName.length > 32) {
+      return res.status(400).json({ message: 'Enter a name between 1 and 32 characters' });
+    }
+
+    const user = await User.create({
+      username: `guest_${randomUUID()}`,
+      displayName,
+      isGuest: true,
+    });
+
+    res.status(201).json({
+      _id: user.id,
+      displayName: user.displayName,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Could not start guest session' });
+  }
+};
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -71,6 +102,7 @@ const getMe = async (req, res) => {
 };
 
 module.exports = {
+  createGuest,
   registerUser,
   loginUser,
   getMe,

@@ -21,7 +21,7 @@ export const useWebRTC = () => {
     isCalling: false,
     callAccepted: false,
     callEnded: false,
-    caller: null, // { id, username }
+    caller: null, // { id, displayName }
     receiver: null // id
   });
 
@@ -73,7 +73,7 @@ export const useWebRTC = () => {
     socket.emit('call-user', {
       userToCall: userToCallId,
       from: user._id,
-      callerUsername: user.username
+      callerDisplayName: user.displayName || user.username
     });
   };
 
@@ -132,8 +132,8 @@ export const useWebRTC = () => {
     if (!socket) return;
 
     // Incoming ring
-    socket.on('incoming-call', ({ from, callerUsername }) => {
-      setCallState(prev => ({ ...prev, isReceivingCall: true, caller: { id: from, username: callerUsername } }));
+    socket.on('incoming-call', ({ from, callerDisplayName }) => {
+      setCallState(prev => ({ ...prev, isReceivingCall: true, caller: { id: from, displayName: callerDisplayName } }));
     });
 
     // Caller: Receiver accepted, now create Offer

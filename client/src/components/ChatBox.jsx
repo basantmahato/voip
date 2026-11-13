@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Phone } from 'lucide-react';
+import { ArrowLeft, Send, Phone } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 
-const ChatBox = ({ selectedUserId, callUser }) => {
+const ChatBox = ({ selectedUser, callUser, onBack }) => {
   const { socket } = useSocket();
   const { user: currentUser } = useAuthStore();
+  const selectedUserId = selectedUser?.id;
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -88,7 +89,7 @@ const ChatBox = ({ selectedUserId, callUser }) => {
     }
   };
 
-  if (!selectedUserId) {
+  if (!selectedUser) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-900 text-gray-500">
         Select a user from the sidebar to start chatting
@@ -99,26 +100,36 @@ const ChatBox = ({ selectedUserId, callUser }) => {
   return (
     <div className="flex-1 flex flex-col bg-gray-900">
       {/* Header */}
-      <div className="h-16 border-b border-gray-700 bg-gray-800 flex items-center justify-between px-6">
-        <div className="text-white font-medium">Chatting with User: {selectedUserId.substring(0,6)}...</div>
+      <div className="flex h-16 flex-none items-center justify-between gap-2 border-b border-gray-700 bg-gray-800 px-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-11 w-11 flex-none items-center justify-center rounded-full text-gray-200 hover:bg-gray-700 lg:hidden"
+            aria-label="Back to chats"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div className="truncate font-medium text-white">{selectedUser.displayName}</div>
+        </div>
         <button 
           onClick={() => callUser(selectedUserId)}
-          className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="flex h-11 flex-none items-center space-x-2 rounded-lg bg-green-600 px-3 text-white transition-colors hover:bg-green-700 sm:px-4"
           title="Start Voice Call"
         >
           <Phone size={18} />
-          <span>Call</span>
+          <span className="hidden sm:inline">Call</span>
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-6">
         {messages.map((msg) => {
           const isMe = msg.senderId === currentUser._id;
           return (
             <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
               <div 
-                className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                className={`max-w-[85%] break-words rounded-2xl px-4 py-2 sm:max-w-[70%] ${
                   isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-700 text-gray-200 rounded-tl-none'
                 }`}
               >
@@ -138,21 +149,22 @@ const ChatBox = ({ selectedUserId, callUser }) => {
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-gray-800 border-t border-gray-700">
-        <form onSubmit={handleSendMessage} className="flex space-x-2">
+      <div className="flex-none border-t border-gray-700 bg-gray-800 p-3 sm:p-4">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <input
             type="text"
             value={newMessage}
             onChange={handleTyping}
             placeholder="Type a message..."
-            className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-full px-4 py-2 outline-none focus:border-blue-500 transition-colors"
+            className="h-11 min-w-0 flex-1 rounded-full border border-gray-600 bg-gray-700 px-4 text-base text-white outline-none transition-colors focus:border-blue-500"
           />
           <button 
             type="submit"
             disabled={!newMessage.trim()}
-            className="bg-blue-600 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            aria-label="Send message"
           >
-            <Send size={18} className="ml-1" />
+            <Send size={18} />
           </button>
         </form>
       </div>

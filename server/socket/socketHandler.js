@@ -1,20 +1,32 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
 
-// Track online users. Map of userId -> socketId
+// Track online users. Map of userId -> socket details.
 const onlineUsers = new Map();
+
+const getOnlineProfiles = () => Array.from(onlineUsers, ([id, user]) => ({
+  id,
+  displayName: user.displayName,
+}));
 
 const setupSocket = (io) => {
   io.on('connection', (socket) => {
     console.log(`🔌 New client connected: ${socket.id}`);
 
-    // When a user logs in / connects, they send their userId
-    socket.on('add-user', (userId) => {
-      onlineUsers.set(userId, socket.id);
-      console.log(`👤 User ${userId} is online (Socket: ${socket.id})`);
+    // Guests send an internal id and their chosen display name.
+    socket.on('add-user', (identity) => {
+      const userId = typeof identity === 'string' ? identity : identity?.userId;
+      const displayName = typeof identity === 'object' && typeof identity.displayName === 'string'
+        ? identity.displayName.trim().slice(0, 32)
+        : 'Guest';
+
+      if (!userId) return;
+
+      onlineUsers.set(userId, { socketId: socket.id, displayName: displayName || 'Guest' });
+      console.log(`👤 ${displayName} is online (Socket: ${socket.id})`);
       
       // Broadcast to everyone the updated list of online users
-      io.emit('online-users', Array.from(onlineUsers.keys()));
+      io.emit('online-users', getOnlineProfiles());
     });
 
     // Handle sending text messages
@@ -30,7 +42,7 @@ const setupSocket = (io) => {
         });
 
         // 2. Check if receiver is online
-        const receiverSocketId = onlineUsers.get(receiverId);
+        const receiverSocketId = onlineUsers.get(receiverId)?.socketId;
         
         if (receiverSocketId) {
           // Send to specific user
@@ -44,7 +56,7 @@ const setupSocket = (io) => {
     // Handle typing indicators
     socket.on('typing', (data) => {
       const { receiverId, isTyping } = data;
-      const receiverSocketId = onlineUsers.get(receiverId);
+      const receiverSocketId = onlineUsers.get(receiverId)?.socketId;
       
       if (receiverSocketId) {
         // Send typing status to the specific user along with the sender's ID
@@ -61,13 +73,13 @@ const setupSocket = (io) => {
 
     // 1. Caller initiates a call
     socket.on('call-user', (data) => {
-      const { userToCall, from, callerUsername } = data;
-      const receiverSocketId = onlineUsers.get(userToCall);
+      const { userToCall, from, callerDisplayName } = data;
+      const receiverSocketId = onlineUsers.get(userToCall)?.socketId;
       
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('incoming-call', {
           from,
-          callerUsername
+          callerDisplayName
         });
       }
     });
@@ -75,7 +87,7 @@ const setupSocket = (io) => {
     // 2. Receiver accepts the call
     socket.on('accept-call', (data) => {
       const { to } = data;
-      const callerSocketId = onlineUsers.get(to);
+      const callerSocketId = onlineUsers.get(to)?.socketId;
       if (callerSocketId) {
         io.to(callerSocketId).emit('call-accepted');
       }
@@ -84,7 +96,7 @@ const setupSocket = (io) => {
     // 3. Receiver rejects the call
     socket.on('reject-call', (data) => {
       const { to } = data;
-      const callerSocketId = onlineUsers.get(to);
+      const callerSocketId = onlineUsers.get(to)?.socketId;
       if (callerSocketId) {
         io.to(callerSocketId).emit('call-rejected');
       }
@@ -93,7 +105,7 @@ const setupSocket = (io) => {
     // 4. WebRTC SDP Offer
     socket.on('offer', (data) => {
       const { to, offer } = data;
-      const receiverSocketId = onlineUsers.get(to);
+      const receiverSocketId = onlineUsers.get(to)?.socketId;
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('offer', {
           from: data.from,
@@ -105,7 +117,7 @@ const setupSocket = (io) => {
     // 5. WebRTC SDP Answer
     socket.on('answer', (data) => {
       const { to, answer } = data;
-      const callerSocketId = onlineUsers.get(to);
+      const callerSocketId = onlineUsers.get(to)?.socketId;
       if (callerSocketId) {
         io.to(callerSocketId).emit('answer', {
           from: data.from,
@@ -117,7 +129,7 @@ const setupSocket = (io) => {
     // 6. ICE Candidates (Network routing info)
     socket.on('ice-candidate', (data) => {
       const { to, candidate } = data;
-      const receiverSocketId = onlineUsers.get(to);
+      const receiverSocketId = onlineUsers.get(to)?.socketId;
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('ice-candidate', {
           from: data.from,
@@ -129,7 +141,7 @@ const setupSocket = (io) => {
     // 7. End Call
     socket.on('end-call', (data) => {
       const { to } = data;
-      const receiverSocketId = onlineUsers.get(to);
+      const receiverSocketId = onlineUsers.get(to)?.socketId;
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('call-ended');
       }
@@ -140,8 +152,8 @@ const setupSocket = (io) => {
       let disconnectedUserId = null;
       
       // Find which user disconnected
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
+      for (const [userId, user] of onlineUsers.entries()) {
+        if (user.socketId === socket.id) {
           disconnectedUserId = userId;
           onlineUsers.delete(userId);
           break;
@@ -150,7 +162,7 @@ const setupSocket = (io) => {
 
       if (disconnectedUserId) {
         console.log(`🔌 User ${disconnectedUserId} disconnected`);
-        io.emit('online-users', Array.from(onlineUsers.keys()));
+        io.emit('online-users', getOnlineProfiles());
       }
     });
   });

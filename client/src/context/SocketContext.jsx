@@ -14,14 +14,17 @@ export const SocketProvider = ({ children }) => {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    // Only connect if we have a logged-in user
+    // Connect after the guest has chosen a display name.
     if (user) {
       const newSocket = io('https://voip-s8p7.onrender.com');
       setSocket(newSocket);
 
       newSocket.on('connect', () => {
         console.log('Connected to socket server');
-        newSocket.emit('add-user', user._id);
+        newSocket.emit('add-user', {
+          userId: user._id,
+          displayName: user.displayName || user.username,
+        });
       });
 
       newSocket.on('online-users', (users) => {

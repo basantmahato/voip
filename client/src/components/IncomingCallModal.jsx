@@ -5,14 +5,14 @@ const IncomingCallModal = ({ callState, acceptCall, rejectCall }) => {
   if (!callState.isReceivingCall) return null;
 
   return (
-    <div className="fixed top-10 right-10 z-50 animate-bounce">
-      <div className="w-72 rounded-xl bg-gray-800 p-4 shadow-2xl border border-gray-700">
+    <div className="fixed inset-x-4 top-4 z-50 animate-bounce sm:inset-x-auto sm:right-10 sm:top-10">
+      <div className="w-full max-w-sm rounded-xl border border-gray-700 bg-gray-800 p-4 shadow-2xl sm:w-72">
         <div className="flex items-center space-x-4 mb-4">
           <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
             <Phone size={24} className="text-white" />
           </div>
           <div>
-            <h4 className="text-white font-bold">{callState.caller?.username}</h4>
+            <h4 className="text-white font-bold">{callState.caller?.displayName}</h4>
             <p className="text-sm text-gray-400">Incoming Voice Call...</p>
           </div>
         </div>
